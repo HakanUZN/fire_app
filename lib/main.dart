@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'sensor_service.dart';
 
 void main() {
   runApp(FireAlertApp());
@@ -11,7 +12,7 @@ class FireAlertApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Fire Detection System',
+      title: 'Yangın Tespit Sistemi',
       theme: ThemeData(primarySwatch: Colors.red),
       home: MainScreen(),
     );
@@ -26,28 +27,45 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   List<String> notifications = [];
   List<LatLng> fireLocations = [];
+  late SensorService sensorService;
+  SensorData? sensorData; // Sensör verilerini tutar
 
+  @override
+  void initState() {
+    super.initState();
+    // Arduino'nun IP adresini buraya girin
+    sensorService = SensorService('http://10.10.0.2');  // Arduino IP adresini doğru şekilde girin  arduniyu her çalıştırdığımızda değişme ihtimali var
+    fetchSensorData();  // Sensör verisini başlatmada çekiyoruz
+  }
+
+  // Sensör verilerini çekme metodu
+  Future<void> fetchSensorData() async {
+    try {
+      final data = await sensorService.fetchSensorData();
+      setState(() {
+        sensorData = data;
+      });
+    } catch (e) {
+      print('Hata: $e');
+    }
+  }
+
+  // Haritaya yangın bildirimi ekleme
   void _addFireAlert(LatLng position) {
-    // Örnek çevresel veriler
     double windSpeed = 15.0; // Rüzgar hızı (km/s)
-    double temperature = 35.0; // Sıcaklık (°C)
-    double humidity = 30.0; // Nem (%)
+    double temperature = sensorData?.temperature ?? 35.0; // Sıcaklık (°C)
+    double humidity = sensorData?.humidity ?? 30.0; // Nem (%)
 
-    // Yayılma hızını hesaplama (basit bir algoritma)
     double spreadSpeed =
         (windSpeed * 0.5) + (temperature * 0.3) - (humidity * 0.2);
 
-    // Varsayılan bir yerleşim yeri mesafesi
     double distanceToSettlement = 10.0; // km
-
-    // Yerleşim yerine ulaşma süresi (saat)
     double timeToSettlement = distanceToSettlement / spreadSpeed;
 
     final time = DateTime.now();
     final formattedTime =
         '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-    final formattedDate =
-        '${time.day}/${time.month}/${time.year}';
+    final formattedDate = '${time.day}/${time.month}/${time.year}';
 
     setState(() {
       fireLocations.add(position);
@@ -91,32 +109,52 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      body: FlutterMap(
-        options: MapOptions(
-          initialCenter: LatLng(38.4192, 27.1287),
-          initialZoom: 10.0,
-          onTap: (tapPosition, point) {
-            _addFireAlert(point);
-          },
-        ),
+      body: Column(
         children: [
-          TileLayer(
-            urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            subdomains: ['a', 'b', 'c'],
-          ),
-          MarkerLayer(
-            markers: fireLocations
-                .map(
-                  (location) => Marker(
-                point: location,
-                child: Icon(
-                  Icons.local_fire_department,
-                  color: Colors.red,
-                  size: 30,
-                ),
+          Expanded(
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: LatLng(38.4192, 27.1287),
+                initialZoom: 10.0,
+                onTap: (tapPosition, point) {
+                  _addFireAlert(point);
+                },
               ),
-            )
-                .toList(),
+              children: [
+                TileLayer(
+                  urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  subdomains: ['a', 'b', 'c'],
+                ),
+                MarkerLayer(
+                  markers: fireLocations
+                      .map(
+                        (location) => Marker(
+                      point: location,
+                      child: Icon(
+                        Icons.local_fire_department,
+                        color: Colors.red,
+                        size: 30,
+                      ),
+                    ),
+                  )
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+          if (sensorData != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  Text('Sıcaklık: ${sensorData!.temperature.toStringAsFixed(1)} °C'),
+                  Text('Nem: ${sensorData!.humidity.toStringAsFixed(1)} %'),
+                ],
+              ),
+            ),
+          ElevatedButton(
+            onPressed: fetchSensorData,
+            child: Text('Sensör Verilerini Güncelle'),
           ),
         ],
       ),
