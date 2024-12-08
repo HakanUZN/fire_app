@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -36,6 +38,10 @@ class _MainScreenState extends State<MainScreen> {
     // Arduino'nun IP adresini buraya girin
     sensorService = SensorService('http://10.10.0.2');  // Arduino IP adresini doğru şekilde girin  arduniyu her çalıştırdığımızda değişme ihtimali var
     fetchSensorData();  // Sensör verisini başlatmada çekiyoruz
+
+    Timer.periodic(Duration(seconds: 30), (timer) {
+      fetchSensorData();
+    });
   }
 
   // Sensör verilerini çekme metodu
@@ -46,7 +52,13 @@ class _MainScreenState extends State<MainScreen> {
         sensorData = data;
       });
     } catch (e) {
-      print('Hata: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sensör verisi alınamadı. Lütfen bağlantınızı kontrol edin.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+
     }
   }
 
@@ -117,7 +129,26 @@ class _MainScreenState extends State<MainScreen> {
                 initialCenter: LatLng(38.4192, 27.1287),
                 initialZoom: 10.0,
                 onTap: (tapPosition, point) {
-                  _addFireAlert(point);
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text("Yangın Bildirimi"),
+                      content: Text("Bu konumda yangın bildirimi yapmak istediğinize emin misiniz?"),
+                      actions: [
+                        TextButton(
+                          child: Text("İptal"),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        TextButton(
+                          child: Text("Evet"),
+                          onPressed: () {
+                            _addFireAlert(point);
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
                 },
               ),
               children: [
