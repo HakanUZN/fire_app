@@ -36,8 +36,8 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     // Arduino'nun IP adresini buraya girin
-    sensorService = SensorService('http://10.10.0.2');  // Arduino IP adresini doğru şekilde girin  arduniyu her çalıştırdığımızda değişme ihtimali var
-    fetchSensorData();  // Sensör verisini başlatmada çekiyoruz
+    sensorService = SensorService('http://192.168.62.167'); // Arduino IP adresini doğru şekilde girin
+    fetchSensorData(); // Sensör verisini başlatmada çekiyoruz
 
     Timer.periodic(Duration(seconds: 30), (timer) {
       fetchSensorData();
@@ -58,7 +58,6 @@ class _MainScreenState extends State<MainScreen> {
           backgroundColor: Colors.red,
         ),
       );
-
     }
   }
 
@@ -123,6 +122,46 @@ class _MainScreenState extends State<MainScreen> {
       ),
       body: Column(
         children: [
+          if (sensorData != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Card(
+                elevation: 4,
+                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sıcaklık: ${sensorData!.temperature.toStringAsFixed(1)} °C',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      Text(
+                        'Nem: ${sensorData!.humidity.toStringAsFixed(1)} %',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      Text(
+                        'Yangın Durumu: ${sensorData!.isFire ? "Evet" : "Hayır"}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: sensorData!.isFire ? Colors.red : Colors.green,
+                        ),
+                      ),
+                      Text(
+                        'Konum: ${sensorData!.latitude.toStringAsFixed(4)}, ${sensorData!.longitude.toStringAsFixed(4)}',
+                        style: TextStyle(fontSize: 18, color: Colors.blue),
+                      ),
+                      Text(
+                        'Bölge: ${sensorData!.city}, ${sensorData!.country}',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
           Expanded(
             child: FlutterMap(
               options: MapOptions(
@@ -173,14 +212,17 @@ class _MainScreenState extends State<MainScreen> {
               ],
             ),
           ),
-          if (sensorData != null)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Text('Sıcaklık: ${sensorData!.temperature.toStringAsFixed(1)} °C'),
-                  Text('Nem: ${sensorData!.humidity.toStringAsFixed(1)} %'),
-                ],
+          SizedBox(height: 8),
+          if (notifications.isNotEmpty)
+            Expanded(
+              child: ListView.builder(
+                itemCount: notifications.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    leading: Icon(Icons.warning, color: Colors.orange),
+                    title: Text(notifications[index]),
+                  );
+                },
               ),
             ),
           ElevatedButton(
