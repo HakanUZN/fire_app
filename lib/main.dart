@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -30,21 +29,19 @@ class _MainScreenState extends State<MainScreen> {
   List<String> notifications = [];
   List<LatLng> fireLocations = [];
   late SensorService sensorService;
-  SensorData? sensorData; // Sensör verilerini tutar
+  SensorData? sensorData;
 
   @override
   void initState() {
     super.initState();
-    // Arduino'nun IP adresini buraya girin
-    sensorService = SensorService('http://192.168.62.167'); // Arduino IP adresini doğru şekilde girin
-    fetchSensorData(); // Sensör verisini başlatmada çekiyoruz
+    sensorService = SensorService('http://10.10.0.2');
+    fetchSensorData();
 
     Timer.periodic(Duration(seconds: 30), (timer) {
       fetchSensorData();
     });
   }
 
-  // Sensör verilerini çekme metodu
   Future<void> fetchSensorData() async {
     try {
       final data = await sensorService.fetchSensorData();
@@ -61,16 +58,15 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  // Haritaya yangın bildirimi ekleme
   void _addFireAlert(LatLng position) {
-    double windSpeed = 15.0; // Rüzgar hızı (km/s)
-    double temperature = sensorData?.temperature ?? 35.0; // Sıcaklık (°C)
-    double humidity = sensorData?.humidity ?? 30.0; // Nem (%)
+    double windSpeed = 15.0;
+    double temperature = sensorData?.temperature ?? 35.0;
+    double humidity = sensorData?.humidity ?? 30.0;
 
     double spreadSpeed =
         (windSpeed * 0.5) + (temperature * 0.3) - (humidity * 0.2);
 
-    double distanceToSettlement = 10.0; // km
+    double distanceToSettlement = 10.0;
     double timeToSettlement = distanceToSettlement / spreadSpeed;
 
     final time = DateTime.now();
