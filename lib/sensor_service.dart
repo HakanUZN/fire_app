@@ -32,7 +32,11 @@ class SensorService {
           city: jsonData['city'] as String,
           latitude: (jsonData['latitude'] as num).toDouble(),
           longitude: (jsonData['longitude'] as num).toDouble(),
+          motion: jsonData['motion'] as String,
+          flame: jsonData['flame'] as String,
+          gas: jsonData['gas'] as String,
         );
+
       } else {
         throw Exception(
             'HTTP hatası: ${response.statusCode}. Sensör verisi alınamadı.');
@@ -64,6 +68,9 @@ class SensorData {
   final String city; // Şehir bilgisi
   final double latitude; // Enlem
   final double longitude; // Boylam
+  final String motion; // Hareket algılandı mı?
+  final String flame; // Alev algılandı mı?
+  final String gas; // Gaz algılandı mı?
 
   SensorData({
     required this.temperature,
@@ -73,5 +80,9 @@ class SensorData {
     required this.city,
     required this.latitude,
     required this.longitude,
+    required this.motion,
+    required this.flame,
+    required this.gas,
   });
 }
+

@@ -47,6 +47,16 @@ class _MainScreenState extends State<MainScreen> {
       final data = await sensorService.fetchSensorData();
       setState(() {
         sensorData = data;
+
+        // Eğer yangın algılandıysa ve konum bilgisi mevcutsa
+        if (sensorData!.isFire) {
+          final fireLocation = LatLng(sensorData!.latitude, sensorData!.longitude);
+          if (!fireLocations.contains(fireLocation)) {
+            fireLocations.add(fireLocation); // Fire iconunu haritaya ekle
+          }
+          // Bildirim eklemek için
+          _addFireAlert(fireLocation);
+        }
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -57,6 +67,7 @@ class _MainScreenState extends State<MainScreen> {
       );
     }
   }
+
 
   void _addFireAlert(LatLng position) {
     double windSpeed = 15.0;
@@ -143,6 +154,18 @@ class _MainScreenState extends State<MainScreen> {
                           fontSize: 18,
                           color: sensorData!.isFire ? Colors.red : Colors.green,
                         ),
+                      ),
+                      Text(
+                        'Alev: ${sensorData!.flame}',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      Text(
+                        'Gaz: ${sensorData!.gas}',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      Text(
+                        'Hareket: ${sensorData!.motion}',
+                        style: TextStyle(fontSize: 18),
                       ),
                       Text(
                         'Konum: ${sensorData!.latitude.toStringAsFixed(4)}, ${sensorData!.longitude.toStringAsFixed(4)}',
